@@ -1,10 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: pvc-deleter-role
+  # "namespace" omitted since ClusterRoles are not namespaced
+  name: pvc-deleter-crole
   annotations:
-    "helm.sh/hook": pre-delete
-    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": hook-succeeded
 rules:
 - apiGroups: [""]
@@ -16,33 +17,36 @@ kind: ServiceAccount
 metadata:
   name: pvc-deleter-sa
   annotations:
-    "helm.sh/hook": pre-delete
-    "helm.sh/hook-weight": "-9"
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": hook-succeeded
 ---
+
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: pvc-deleter-rolebinding
+  name:  pvc-deleter-binding
   annotations:
-    "helm.sh/hook": pre-delete
-    "helm.sh/hook-weight": "-8"
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": hook-succeeded
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: pvc-deleter-role
 subjects:
 - kind: ServiceAccount
-  name: pvc-deleter-sa
+  name:   pvc-deleter-sa
+  namespace: "{{.Release.Namespace}}"
+  #apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: pvc-deleter-crole
+
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: pvc-deleter-job
   annotations:
-    "helm.sh/hook": pre-delete
-    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-4"
     "helm.sh/hook-delete-policy": hook-succeeded
 spec:
   template:
