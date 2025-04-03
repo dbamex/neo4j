@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   # "namespace" omitted since ClusterRoles are not namespaced
-  name: pvc-deleter-crole-{{- .Release.Name}}
+  name: pvc-deleter-crole
   annotations:
     "helm.sh/hook": post-delete
     "helm.sh/hook-weight": "-5"
@@ -15,7 +15,7 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: pvc-deleter-sa-{{- .Release.Name}}
+  name: pvc-deleter-sa
   annotations:
     "helm.sh/hook": post-delete
     "helm.sh/hook-weight": "-5"
@@ -25,7 +25,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name:  pvc-deleter-binding-{{- .Release.Name}}
+  name:  pvc-deleter-binding
   annotations:
     "helm.sh/hook": post-delete
     "helm.sh/hook-weight": "-5"
@@ -43,7 +43,7 @@ roleRef:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: pvc-deleter-job-{{- .Release.Name}}
+  name: pvc-deleter-job
   annotations:
     "helm.sh/hook": post-delete
     "helm.sh/hook-weight": "-4"
