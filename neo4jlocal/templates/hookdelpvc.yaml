@@ -1,0 +1,65 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  # "namespace" omitted since ClusterRoles are not namespaced
+  name: pvc-deleter-crole
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+rules:
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list", "delete", "deletecollection"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pvc-deleter-sa
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name:  pvc-deleter-binding
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+subjects:
+- kind: ServiceAccount
+  name:   pvc-deleter-sa
+  namespace: "{{.Release.Namespace}}"
+  #apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: pvc-deleter-crole
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pvc-deleter-job
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: post-delete-job
+        image: "bitnami/kubectl"
+        command: ["kubectl"]
+        args:
+        - "delete"
+        - "pvc"
+        - "data-{{- .Release.Name}}-0"
+      serviceAccountName: pvc-deleter-sa
+      securityContext:
+        runAsUser: 0
